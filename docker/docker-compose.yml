@@ -1,0 +1,49 @@
+version: '3.4'
+volumes:
+  cache:
+  log:
+  vendor:
+  node_modules:
+
+services:
+  db:
+    image: mysql:5
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      MYSQL_USER: root
+    volumes:
+      - ../data/mysqlsf:/var/lib/mysql:rw
+    command: --innodb-use-native-aio=0
+    ports:
+      - 3306:3306
+
+  maildev:
+    image: djfarrelly/maildev
+    ports:
+      - 8002:80
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+    ports:
+      - 8080:80
+    links:
+      - db:db
+    depends_on:
+      - db
+
+  php740:
+    build:
+      context: ..
+      dockerfile: ./docker/php74/Dockerfile
+    ports:
+      - 8000:80
+    volumes:
+      - ..:/var/www
+      - ../docker/vhosts:/etc/apache2/sites-enabled
+      - vendor:/var/www/vendor
+      - node_modules:/var/www/node_modules
+      - cache:/var/www/var/cache
+      - log:/var/www/var/log
